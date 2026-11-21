@@ -59,7 +59,7 @@ dependencies {
 
 | モジュール | 中身 | 頼る物 |
 |---|---|---|
-| `config-core` | `AppConfig`・`ConfigSession`・規則と実験の式・保存と取得の口・同梱の組 | kotlinx-coroutines・kotlinx-serialization-json |
+| `config-core` | `AppConfig`・`ConfigSession`・規則と実験の式・保存と取得のインターフェース・同梱の組 | kotlinx-coroutines・kotlinx-serialization-json |
 | `config-testing` | `FakeConfigSetSource`・`ConfigEventRecorder` | `config-core` |
 
 ## 動く環境

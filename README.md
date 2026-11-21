@@ -1,5 +1,3 @@
-English | [日本語](./README.ja.md)
-
 # kotlin-app-config
 
 Change values in your Android app without shipping a new build: typed flags with rules on device
