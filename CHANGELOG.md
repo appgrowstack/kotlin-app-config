@@ -1,0 +1,21 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+## [0.1.0] - 2026-11-21
+
+### Added
+
+- `config-core`: typed flags (`AppConfig.bool`, `int`, `double`, `string`, `json`) with the app's
+  default, rules on device values, experiments with weighted variants (the owner's devices get the
+  first variant), `config_exposed` once per key per launch and `config_rejected` once per key, reason
+  and set version, a set fixed for the launch (`ConfigSession`), the set shipped in the app
+  (`BundledConfigSetSource`), storage (`FileConfigStorage`, `InMemoryConfigStorage`) and the fetch
+  port (`ConfigSetSource`).
+- `config-testing`: `FakeConfigSetSource` and `ConfigEventRecorder`.
+- Passes every table in `schema/cases/config` and the variant vectors in `schema/cases/experiment`.
