@@ -26,6 +26,27 @@ public object ConfigExperiment {
 
     public fun variantKey(project: String, person: String, experiment: String): String = "$project:$person:$experiment:variant"
 
+    /** The share of people in the product-wide holdout (R10). */
+    public const val GLOBAL_HOLDOUT: Double = 0.05
+
+    /**
+     * Whether the person is in the product-wide holdout (R10):
+     * `hash32("<project>:<person>:global_holdout") / 2^32 < 0.05`. The owner's device never is.
+     */
+    public fun inGlobalHoldout(project: String, person: String, internal: Boolean): Boolean =
+        !internal && hash32("$project:$person:global_holdout").toDouble() / TWO_32 < GLOBAL_HOLDOUT
+
+    /**
+     * The chance of the assigned variant: its weight over the sum (the owner's device: 1 for the first).
+     * Rounded to 6 places, as the shared cases and the server compare.
+     */
+    public fun propensity(weights: List<Int>, index: Int, internal: Boolean): Double {
+        if (internal) return if (index == 0) 1.0 else 0.0
+        val total = weights.sum()
+        if (total <= 0 || index !in weights.indices) return 0.0
+        return Math.round(weights[index].toDouble() / total * 1_000_000) / 1_000_000.0
+    }
+
     /**
      * The first variant `i` with `h × (sum of weights) < (weights up to i) × 2^32`, compared as whole
      * numbers. The owner's and testers' devices always get the first variant.

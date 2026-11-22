@@ -22,7 +22,11 @@ public enum class ConfigFlagType(public val wire: String) {
 
 /** Where a value came from, in the order the rules are checked. */
 public enum class ConfigValueSource(public val wire: String) {
-    FALLBACK("fallback"), RULE("rule"), EXPERIMENT("experiment"), DEFAULT("default"),
+    FALLBACK("fallback"), RULE("rule"), EXPERIMENT("experiment"),
+
+    /** The person is in the product-wide holdout (R10): the experiment's first variant, not recorded. */
+    GLOBAL_HOLDOUT("global_holdout"),
+    DEFAULT("default"),
 }
 
 /** One read: the value, where it came from and, for an experiment, the variant's name. */
@@ -34,7 +38,7 @@ public data class ConfigRead(
 )
 
 /**
- * An event for the app's analytics: `config_exposed` (key, experiment, variant, set_version) or
+ * An event for the app's analytics: `config_exposed` (key, experiment, variant, set_version, propensity, policy_version) or
  * `config_rejected` (key, reason, set_version). The SDK sends nothing itself.
  */
 public data class ConfigEvent(val name: String, val params: JsonObject)
@@ -125,17 +129,26 @@ public class ConfigSession(
         }
         val e = f.experiment
         if (e != null && !now.isBefore(e.startsAt) && (e.endsAt == null || now.isBefore(e.endsAt))) {
-            val index = ConfigExperiment.variant(set.project, person, e.id, e.variants.map { it.weight }, internal).index
+            // The product-wide holdout (R10): the first variant (today's value), with no `config_exposed`.
+            if (set.globalHoldout && ConfigExperiment.inGlobalHoldout(set.project, person, internal)) {
+                return ConfigRead(key, e.variants[0].value, ConfigValueSource.GLOBAL_HOLDOUT, null)
+            }
+            val weights = e.variants.map { it.weight }
+            val index = ConfigExperiment.variant(set.project, person, e.id, weights, internal).index
             val chosen = e.variants[index]
             if (exposed.add(key)) {
-                emit(ConfigEvent(EXPOSED, buildJsonObject { put("key", key); put("experiment", e.id); put("variant", chosen.name); put("set_version", version) }))
+                val propensity = ConfigExperiment.propensity(weights, index, internal)
+                emit(ConfigEvent(EXPOSED, buildJsonObject {
+                    put("key", key); put("experiment", e.id); put("variant", chosen.name); put("set_version", version)
+                    put("propensity", propensity); put("policy_version", version)
+                }))
             }
             return ConfigRead(key, chosen.value, ConfigValueSource.EXPERIMENT, chosen.name)
         }
         return ConfigRead(key, f.default, ConfigValueSource.DEFAULT, null)
     }
 
-    internal class LoadedSet(val project: String, val version: Int, val flags: JsonObject)
+    internal class LoadedSet(val project: String, val version: Int, val flags: JsonObject, val globalHoldout: Boolean)
 
     public companion object {
         public const val SCHEMA_VERSION: Int = 1
@@ -157,7 +170,7 @@ public class ConfigSession(
             val project = (element["project"] as? JsonPrimitive)?.takeIf { it.isString }?.content ?: return null
             val version = element["version"].number() ?: return null
             val flags = element["flags"] as? JsonObject ?: return null
-            return LoadedSet(project, version.toInt(), flags)
+            return LoadedSet(project, version.toInt(), flags, globalHoldout = element["global_holdout"].bool() == true)
         }
 
         /** True when [text] is a set this SDK can use (so a fetched set is worth keeping). */

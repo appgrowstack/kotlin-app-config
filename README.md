@@ -25,7 +25,10 @@ Android.
   first rule that matches wins
 - **Experiments.** 2 to 4 weighted variants, assigned by `hash32("<project>:<person>:<id>:variant")`
   in whole numbers, the same as the server and the Swift SDK. The first variant is the baseline and
-  your own devices always get it. `config_exposed` is sent once per key per launch
+  your own devices always get it. `config_exposed` (with `propensity`, the chance of the variant, and
+  `policy_version`, the set's version) is sent once per key per launch. When the set has
+  `global_holdout: true`, a person with `hash32("<project>:<person>:global_holdout") / 2³² < 0.05`
+  gets the first variant (source `GLOBAL_HOLDOUT`) and sends no `config_exposed`
 - **Stable while the app runs.** The set is read at launch; a set fetched later is used from the next
   launch
 - **Works on its own.** `BundledConfigSetSource` reads the set shipped in the app. Any

@@ -16,7 +16,7 @@ Androidのアプリの値を、新しいビルドを出さずに変える。型�
 
 - **型つきで読み、無ければアプリの既定。** `bool`・`int`・`double`・`string`・`json`。keyが無い・フラグが読めない・型が違うときはアプリの既定の値を返す。後の2つは`config_rejected`を1回記録する
 - **端末の値の規則。** `eq`・`ne`・`in`・`not_in`・`gte`・`lte`・`exists`と`all`・`any`を、`platform`・`app_version`・`lang`・`region`・`days_since_first_seen`とアプリの値に当てる。上から最初に当たった規則を使う
-- **実験。** 重みの付いた2〜4つの案を`hash32("<project>:<person>:<id>:variant")`で整数のまま割り当てる。サーバーとSwiftのSDKと同じ式。最初の案が比べる元で、本人の端末はいつも最初の案になる。`config_exposed`は起動ごとにkeyの最初の1回だけ
+- **実験。** 重みの付いた2〜4つの案を`hash32("<project>:<person>:<id>:variant")`で整数のまま割り当てる。サーバーとSwiftのSDKと同じ式。最初の案が比べる元で、本人の端末はいつも最初の案になる。`config_exposed`（その案を選んだ確率`propensity`と、組のversionの`policy_version`つき）は起動ごとにkeyの最初の1回だけ。組の`global_holdout`が`true`のとき、`hash32("<project>:<person>:global_holdout") / 2³² < 0.05`の人は最初の案の値になり（sourceは`GLOBAL_HOLDOUT`）、`config_exposed`を送らない
 - **起動の間は変わらない。** 組は起動の最初に読む。後で取れた組は次の起動から使う
 - **単体で動く。** `BundledConfigSetSource`がアプリに同梱した組を読む。`ConfigSetSource`を差し替えればサーバーから取れる
 - **Androidに頼らない。** `config-core`はKotlin/JVM（coroutinesとkotlinx.serialization）
