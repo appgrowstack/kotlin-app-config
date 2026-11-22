@@ -6,5 +6,5 @@ public object ConfigSdk {
     public const val NAME: String = "kotlin-app-config"
 
     /** The released version. Must equal `version` in gradle.properties (ConfigSdkTest checks it). */
-    public const val VERSION: String = "0.1.0"
+    public const val VERSION: String = "0.2.0"
 }
