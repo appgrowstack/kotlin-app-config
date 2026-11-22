@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- A rule may have `app_version` (the range core resolved from its `requires`: per OS
+  `{ "min": …, "exclude": [ … ] }`) and the keys `requires` and `exclude_app_versions`, which the
+  device does not read. A rule needs `when`, `app_version` or both; any other key, or a range that
+  does not read, makes the flag invalid. A rule outside its range is skipped.
+- An experiment may have `app_version` too: outside it, the flag gives the default value and sends
+  no `config_exposed`.
+
 ## [0.1.0] - 2026-11-22
 
 ### Added

@@ -11,8 +11,14 @@ import java.time.Instant
 public class ConfigInvalidFlag(message: String) : Exception(message)
 
 internal class ParsedVariant(val name: String, val weight: Int, val value: JsonElement)
-internal class ParsedExperiment(val id: String, val variants: List<ParsedVariant>, val startsAt: Instant, val endsAt: Instant?)
-internal class ParsedRule(val condition: ConfigCondition, val value: JsonElement)
+internal class ParsedExperiment(
+    val id: String,
+    val variants: List<ParsedVariant>,
+    val startsAt: Instant,
+    val endsAt: Instant?,
+    val appVersion: Map<String, ConfigVersionRange>?,
+)
+internal class ParsedRule(val condition: ConfigCondition?, val appVersion: Map<String, ConfigVersionRange>?, val value: JsonElement)
 internal class ParsedFlag(val type: ConfigFlagType, val default: JsonElement, val rules: List<ParsedRule>, val experiment: ParsedExperiment?)
 
 /** A condition on device values: one comparison, or `all` / `any` of conditions (3 levels at most). */
@@ -31,6 +37,9 @@ public object ConfigRules {
     private val EXPERIMENT_ID = Regex("^[a-z0-9-]{3,40}$")
     private val OPERATORS = setOf("eq", "ne", "in", "not_in", "gte", "lte", "exists")
     private val FLAG_KEYS = setOf("type", "default", "rules", "experiment")
+
+    /** The keys a rule may have. `requires` and `exclude_app_versions` are for core's resolving; the device does not read them. */
+    private val RULE_KEYS = setOf("when", "value", "requires", "exclude_app_versions", "app_version")
 
     /** Whether [value] fits [type]. An int is a whole number (written `3` or `3.0`). */
     public fun fits(type: ConfigFlagType, value: JsonElement): Boolean = when (type) {
@@ -53,10 +62,12 @@ public object ConfigRules {
         json["rules"]?.let { r ->
             if (r !is JsonArray || r.size > 30) invalid()
             for (rule in r) {
-                if (rule !is JsonObject || rule.keys != setOf("when", "value")) invalid()
-                val value = rule.getValue("value")
+                if (rule !is JsonObject || rule.keys.any { it !in RULE_KEYS }) invalid()
+                val value = rule["value"] ?: invalid()
                 if (!fits(type, value)) invalid()
-                rules += ParsedRule(parseCondition(rule.getValue("when"), 0), value)
+                if ("when" !in rule && "app_version" !in rule) invalid()
+                val condition = rule["when"]?.let { parseCondition(it, 0) }
+                rules += ParsedRule(condition, appVersionOf(rule), value)
             }
         }
         return ParsedFlag(type, default, rules, json["experiment"]?.let { parseExperiment(type, it) })
@@ -82,7 +93,26 @@ public object ConfigRules {
         val startsAt = json["starts_at"].string()?.let(::parseTime) ?: invalid()
         val end = json["ends_at"] ?: invalid()
         val endsAt = if (end is JsonNull) null else end.string()?.let(::parseTime) ?: invalid()
-        return ParsedExperiment(id, parsed, startsAt, endsAt)
+        return ParsedExperiment(id, parsed, startsAt, endsAt, appVersionOf(json))
+    }
+
+    /** A rule's or the experiment's `app_version` (resolved by core), or `null` when it has none (no filter by version). */
+    private fun appVersionOf(item: JsonObject): Map<String, ConfigVersionRange>? {
+        val json = item["app_version"] ?: return null
+        return ConfigVersionRange.parseAll(json) ?: invalid()
+    }
+
+    /**
+     * Whether the device's `platform` and `app_version` fall in [range]. No range fits everyone; a device
+     * without those values, with a version that does not read, or on an OS the range lacks does not fit.
+     */
+    internal fun versionFits(range: Map<String, ConfigVersionRange>?, facts: (String) -> JsonPrimitive?): Boolean {
+        if (range == null) return true
+        val platform = facts("platform").string() ?: return false
+        val text = facts("app_version").string() ?: return false
+        val r = range[platform] ?: return false
+        val version = ConfigVersion.parse(text) ?: return false
+        return version in r
     }
 
     private fun isScalar(e: JsonElement): Boolean = e is JsonPrimitive && e !is JsonNull && (e.isString || e.bool() != null || e.number() != null)

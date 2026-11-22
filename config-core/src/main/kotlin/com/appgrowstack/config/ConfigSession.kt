@@ -125,10 +125,12 @@ public class ConfigSession(
             return ConfigRead(key, fallback, ConfigValueSource.FALLBACK, null)
         }
         for (rule in f.rules) {
-            if (ConfigRules.matches(rule.condition, facts)) return ConfigRead(key, rule.value, ConfigValueSource.RULE, null)
+            if (!ConfigRules.versionFits(rule.appVersion, facts)) continue
+            if (rule.condition == null || ConfigRules.matches(rule.condition, facts)) return ConfigRead(key, rule.value, ConfigValueSource.RULE, null)
         }
         val e = f.experiment
-        if (e != null && !now.isBefore(e.startsAt) && (e.endsAt == null || now.isBefore(e.endsAt))) {
+        val running = e != null && !now.isBefore(e.startsAt) && (e.endsAt == null || now.isBefore(e.endsAt))
+        if (e != null && running && ConfigRules.versionFits(e.appVersion, facts)) {
             // The product-wide holdout (R10): the first variant (today's value), with no `config_exposed`.
             if (set.globalHoldout && ConfigExperiment.inGlobalHoldout(set.project, person, internal)) {
                 return ConfigRead(key, e.variants[0].value, ConfigValueSource.GLOBAL_HOLDOUT, null)

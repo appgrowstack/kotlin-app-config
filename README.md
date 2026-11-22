@@ -21,8 +21,13 @@ Android.
   broken flag or a different type gives your default; the last two are reported once as
   `config_rejected`
 - **Rules on device values.** `eq`, `ne`, `in`, `not_in`, `gte`, `lte`, `exists` with `all` / `any`,
-  on `platform`, `app_version`, `lang`, `region`, `days_since_first_seen` and your own values. The
-  first rule that matches wins
+  on `platform`, `lang`, `region`, `days_since_first_seen` and your own values. The first rule that
+  matches wins
+- **Versions resolved for you.** A rule or an experiment states what it `requires` (feature keys),
+  not version ranges. Core resolves it per OS into `app_version`: `{ "min": "2.4.0", "exclude": ["2.5.0"] }`.
+  The device only checks its `platform` and `app_version` against that range: a rule outside it is
+  skipped, and an experiment outside it gives the default value with no `config_exposed`. A rule
+  needs `when`, `app_version` or both
 - **Experiments.** 2 to 4 weighted variants, assigned by `hash32("<project>:<person>:<id>:variant")`
   in whole numbers, the same as the server and the Swift SDK. The first variant is the baseline and
   your own devices always get it. `config_exposed` (with `propensity`, the chance of the variant, and
