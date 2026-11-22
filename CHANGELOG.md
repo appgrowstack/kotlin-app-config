@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-23
+
 ### Changed
 
 - A rule may have `app_version` (the range core resolved from its `requires`: per OS

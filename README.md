@@ -71,8 +71,8 @@ From [JitPack](https://jitpack.io/#appgrowstack/kotlin-app-config):
 dependencyResolutionManagement { repositories { maven("https://jitpack.io") } }
 // build.gradle.kts
 dependencies {
-    implementation("com.github.appgrowstack.kotlin-app-config:config-core:0.1.0")
-    testImplementation("com.github.appgrowstack.kotlin-app-config:config-testing:0.1.0")
+    implementation("com.github.appgrowstack.kotlin-app-config:config-core:0.2.0")
+    testImplementation("com.github.appgrowstack.kotlin-app-config:config-testing:0.2.0")
 }
 ```
 

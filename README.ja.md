@@ -53,8 +53,8 @@ val headline = config.string("paywall_headline", default = getString(R.string.pa
 dependencyResolutionManagement { repositories { maven("https://jitpack.io") } }
 // build.gradle.kts
 dependencies {
-    implementation("com.github.appgrowstack.kotlin-app-config:config-core:0.1.0")
-    testImplementation("com.github.appgrowstack.kotlin-app-config:config-testing:0.1.0")
+    implementation("com.github.appgrowstack.kotlin-app-config:config-core:0.2.0")
+    testImplementation("com.github.appgrowstack.kotlin-app-config:config-testing:0.2.0")
 }
 ```
 
